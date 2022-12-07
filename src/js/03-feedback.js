@@ -1,47 +1,45 @@
 import throttle from 'lodash.throttle';
 
-const refs = {
-    form: document.querySelector('.feedback-form'),
-    email: document.querySelector('input[type="email"]'),
-    message: document.querySelector('textarea[name="message"]'),
-};
+const formEl = document.querySelector('.feedback-form');
+const inputEl = document.querySelector('.feedback-form input');
+const textareaEl = document.querySelector('.feedback-form textarea');
+const STORAGE_KEY = 'feedback-form-state';
 
-refs.form.addEventListener('submit', onFormSumbit);
-refs.form.addEventListener('input', throttle(onInput, 500));
+const formData = {};
 
-const keyMail = 'email';
-const keyMessage = 'message';
+populateForm();
 
-onLocalStorageItems();
+formEl.addEventListener('input', onFormInput);
+formEl.addEventListener('submit', throttle(onFormSubmit, 500));
 
-function onLocalStorageItems(props) {
-    if (localStorage.getItem(keyMail)) {
-        refs.email.value = localStorage.getItem(keyMail);
-    }
-    if (localStorage.getItem(keyMessage)) {
-        refs.message.value = localStorage.getItem(keyMessage);
-    }
+function onFormInput(event) {
+  formData[event.target.name] = event.target.value;
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
 }
 
-function onFormSumbit(event) {
-    event.preventDefault();
-    
-  infoFormData(event.currentTarget);
+function onFormSubmit(event) {
+  event.preventDefault();
   event.currentTarget.reset();
-  localStorage.removeItem(keyMail);
-  localStorage.removeItem(keyMessage);
+
+  const savedFormData = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  console.log(savedFormData);
+  localStorage.removeItem(STORAGE_KEY);
 }
 
-function infoFormData(form) {
-    const feedbackInfo = {};
-    new FormData(form).forEach((value, key) => (feedbackInfo[key] = value));
-    console.log('feedbackInfo', feedbackInfo);
-}
+function populateForm() {
+  const savedFormData = JSON.parse(localStorage.getItem(STORAGE_KEY));
 
-function onInput(event) {
-    if (event.target.name === 'email')
-        localStorage.setItem(keyMail, event.target.value);
-    if (event.target.name === 'message')
-        localStorage.setItem(keyMessage, event.target.value);
-}
+  if (savedFormData === null) {
+    return;
+  }
 
+  if (savedFormData.email) {
+    inputEl.value = savedFormData.email;
+    formData['email'] = inputEl.value;
+  }
+  if (savedFormData.message) {
+    textareaEl.value = savedFormData.message;
+    formData['message'] = textareaEl.value;
+  }
+}
